@@ -1,7 +1,18 @@
-import { IsOptional, IsString, IsEnum } from 'class-validator';
+import { IsOptional, MaxLength, IsString, IsEnum, IsNotEmpty } from 'class-validator';
 import { Severity, Status } from '../entities/incident.entity';
 
 export class UpdateIncidentDto {
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  service?: string;
+
   @IsOptional()
   @IsEnum(Status, { message: 'Status must be: open, investigating, resolved' })
   status?: Status;
@@ -12,5 +23,8 @@ export class UpdateIncidentDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(250, {
+    message: 'Description must be at most 250 characters',
+  })
   description?: string;
 }

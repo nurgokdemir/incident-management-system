@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IncidentsModule } from './modules/incidents/incidents.module';
 import { Incident } from './modules/incidents/entities/incident.entity';
+import { AiModule } from './modules/ai/ai.module';
+
 
 @Module({
   imports: [
@@ -13,6 +15,7 @@ import { Incident } from './modules/incidents/entities/incident.entity';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
+      
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         host: config.get('DB_HOST'),
@@ -23,9 +26,12 @@ import { Incident } from './modules/incidents/entities/incident.entity';
         entities: [Incident],
         synchronize: true,
         logging: true,
+        timezone: 'Europe/Istanbul',
       }),
     }),
     IncidentsModule,
+    
+    AiModule,
   ],
 })
 export class AppModule {}

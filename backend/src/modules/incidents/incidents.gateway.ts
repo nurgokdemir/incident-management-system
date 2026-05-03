@@ -29,14 +29,26 @@ export class IncidentsGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   emitIncidentCreated(incident: Incident) {
-    this.server.emit('incident:created', incident);
+    try {
+      this.server.emit('incident:created', incident);
+    } catch (error) {
+      this.logger.error('Failed to emit incident:created', error);
+    }
   }
 
   emitIncidentUpdated(incident: Incident) {
-    this.server.emit('incident:updated', incident);
+    try {
+      this.server.emit('incident:updated', incident);
+    } catch (error) {
+      this.logger.error('Failed to emit incident:updated', error);
+    }
   }
 
   emitIncidentDeleted(id: string) {
-    this.server.emit('incident:deleted', { id });
+    try {
+      this.server.emit('incident:deleted', { id });
+    } catch (error) {
+      this.logger.error('Failed to emit incident:deleted', error);
+    }
   }
 }

@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Severity, Status } from '../entities/incident.entity';
 
 export enum SortOrder {
@@ -16,19 +16,24 @@ export class QueryIncidentDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ example: 10 })
+  @ApiPropertyOptional({ example: 8 })
   @IsOptional()
   @Transform(({ value }) => Number(value))
   @IsInt()
   @Min(1)
-  limit?: number = 10;
+  limit?: number = 8;
 
-  @ApiPropertyOptional({ enum: Status, example: Status.OPEN })
+  @ApiPropertyOptional({ example: 'payment' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ enum: Status })
   @IsOptional()
   @IsEnum(Status)
   status?: Status;
 
-  @ApiPropertyOptional({ enum: Severity, example: Severity.HIGH })
+  @ApiPropertyOptional({ enum: Severity })
   @IsOptional()
   @IsEnum(Severity)
   severity?: Severity;
@@ -48,8 +53,8 @@ export class QueryIncidentDto {
   @IsString()
   createdTo?: string;
 
-  @ApiPropertyOptional({ enum: SortOrder, example: SortOrder.DESC })
+  @ApiPropertyOptional({ enum: SortOrder })
   @IsOptional()
   @IsEnum(SortOrder)
-  sortOrder?: SortOrder = SortOrder.DESC;
+  sortOrder?: SortOrder;
 }

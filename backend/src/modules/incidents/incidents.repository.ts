@@ -30,57 +30,117 @@ export class IncidentsRepository {
 
 async findAll(query: QueryIncidentDto) {
   const page = query.page ?? 1;
-  const limit = query.limit ?? 10;
+  const limit = query.limit ?? 8;
   const skip = (page - 1) * limit;
 
-  const qb = this.repo.createQueryBuilder('incident');
+  const baseQb = this.repo.createQueryBuilder('incident');
 
-  qb.where('incident.deletedAt IS NULL');
+  baseQb.where('incident.deletedAt IS NULL');
+
+  if (query.search) {
+  baseQb.andWhere(
+    `(
+      LOWER(incident.title) LIKE LOWER(:search)
+      OR LOWER(incident.description) LIKE LOWER(:search)
+      OR LOWER(incident.service) LIKE LOWER(:search)
+      OR CAST(incident.id AS TEXT) LIKE :search
+    )`,
+    { search: `%${query.search}%` },
+  );
+}
 
   if (query.status) {
-    qb.andWhere('incident.status = :status', { status: query.status });
+    baseQb.andWhere('incident.status = :status', { status: query.status });
   }
 
   if (query.severity) {
-    qb.andWhere('incident.severity = :severity', { severity: query.severity });
+    baseQb.andWhere('incident.severity = :severity', {
+      severity: query.severity,
+    });
   }
 
   if (query.service) {
-    qb.andWhere('LOWER(incident.service) LIKE LOWER(:service)', {
+    baseQb.andWhere('LOWER(incident.service) LIKE LOWER(:service)', {
       service: `%${query.service}%`,
     });
   }
 
   if (query.createdFrom) {
-    qb.andWhere('incident.createdAt >= :createdFrom', {
+    baseQb.andWhere('incident.createdAt >= :createdFrom', {
       createdFrom: query.createdFrom,
     });
   }
 
   if (query.createdTo) {
-    qb.andWhere('incident.createdAt <= :createdTo', {
+    baseQb.andWhere('incident.createdAt <= :createdTo', {
       createdTo: query.createdTo,
     });
   }
 
-  qb.orderBy('incident.createdAt', query.sortOrder ?? 'DESC')
-    .skip(skip)
-    .take(limit);
+  const total = await baseQb.clone().getCount();
 
-  const [data, total] = await qb.getManyAndCount();
+  const severityRaw = await baseQb
+  .clone()
+  .select('incident.severity', 'severity')
+  .addSelect('COUNT(incident.id)', 'count')
+  .groupBy('incident.severity')
+  .getRawMany();
+
+const severityStats = {
+  critical: 0,
+  high: 0,
+  medium: 0,
+  low: 0,
+};
+
+severityRaw.forEach((item) => {
+  severityStats[item.severity as 'critical' | 'high' | 'medium' | 'low'] =
+    Number(item.count);
+});
+
+  const statsRaw = await baseQb
+    .clone()
+    .select('incident.status', 'status')
+    .addSelect('COUNT(incident.id)', 'count')
+    .groupBy('incident.status')
+    .getRawMany();
+
+  const stats = {
+    total,
+    open: 0,
+    investigating: 0,
+    resolved: 0,
+  };
+
+  statsRaw.forEach((item) => {
+    stats[item.status as 'open' | 'investigating' | 'resolved'] = Number(
+      item.count,
+    );
+  });
+
+  const data = await baseQb
+    .clone()
+    .orderBy('incident.createdAt', query.sortOrder ?? 'DESC')
+    .skip(skip)
+    .take(limit)
+    .getMany();
+
+  const totalPages = Math.ceil(total / limit);
 
 return {
   data,
-  meta: { 
+  meta: {
     total,
     page,
     limit,
-    totalPages: Math.ceil(total / limit),
-    hasNextPage: page < Math.ceil(total / limit),
+    totalPages,
+    hasNextPage: page < totalPages,
     hasPreviousPage: page > 1,
     sortBy: 'createdAt',
     sortOrder: query.sortOrder ?? 'DESC',
   },
+  stats,
+  severityStats,
 };
 }
 

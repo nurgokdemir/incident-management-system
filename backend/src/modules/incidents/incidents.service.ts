@@ -34,9 +34,9 @@ export class IncidentsService {
   }
 
 async update(id: string, dto: UpdateIncidentDto) {
-  const existingIncident = await this.findOne(id);
-
-  const updated = await this.incidentsRepository.update(existingIncident.id, dto);
+  await this.findOne(id);
+  
+  const updated = await this.incidentsRepository.update(id, dto);
 
   if (!updated) {
     throw new NotFoundException(`Incident with id "${id}" not found`);

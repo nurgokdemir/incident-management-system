@@ -1,13 +1,16 @@
+import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { Incident, Severity, Status } from './modules/incidents/entities/incident.entity';
 
+config();
+
 const dataSource = new DataSource({
   type: 'postgres',
-  host: 'localhost',
-  port: 5432,
-  username: 'postgres',
-  password: '123456',
-  database: 'incident_db',
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432', 10),
+  username: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'postgres',
+  database: process.env.DB_NAME || 'incident_db',
   entities: [Incident],
   synchronize: true,
 });

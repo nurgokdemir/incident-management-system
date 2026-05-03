@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsEnum, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsEnum, IsOptional, MaxLength } from 'class-validator';
 import { Severity } from '../entities/incident.entity';
 
 export class CreateIncidentDto {
@@ -8,6 +8,9 @@ export class CreateIncidentDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(250, {
+    message: 'Description must be at most 250 characters',
+  })
   description?: string;
 
   @IsNotEmpty({ message: 'Service cannot be empty' })

@@ -1,17 +1,31 @@
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
-  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
+  const logger = new Logger('HTTP');
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: (process.env.CORS_ORIGIN || 'http://localhost:5173').split(','),
     credentials: true,
   });
+
+  app.use((req, res, next) => {
+    const startedAt = Date.now();
+
+    res.on('finish', () => {
+      const duration = Date.now() - startedAt;
+      logger.log(`${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`);
+    });
+
+    next();
+  });
+
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -21,21 +35,16 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(new AllExceptionsFilter());
-
-  // Swagger
   const config = new DocumentBuilder()
-    .setTitle('Incident Manager API')
-    .setDescription('Real-time incident management system')
+    .setTitle('Incident Management API')
+    .setDescription('Real-time incident management backend')
     .setVersion('1.0')
-    .addTag('incidents')
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-  logger.log(`🚀 Running on http://localhost:${port}`);
-  logger.log(`📄 Swagger: http://localhost:${port}/api/docs`);
+  await app.listen(3000);
 }
+
 bootstrap();

@@ -48,4 +48,5 @@ export class Incident {
 
   @DeleteDateColumn()
   deletedAt!: Date;
+
 }
